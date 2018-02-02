@@ -1,0 +1,94 @@
+<html>
+  <head>
+    <style>
+      p {
+        font-style: italic;
+      }
+    </style>
+  </head>
+  <body>
+    <p>
+      <button id="start">Start</button>
+    </p>
+    <p id="currentState"></p>
+    Project intro:
+    <p id="projectIntro"></p>
+    Problem:
+    <p id="problem"></p>
+    Budget:
+    <p id="budget"></p>
+    Deadline:
+    <p id="deadline"></p>
+
+
+    <textarea id="speech" style="width: 1000px; height: 400px;">
+    </textarea>
+    <script>
+      var startButton = document.getElementById("start");
+      startButton.addEventListener('click', function(e) {
+        e.preventDefault();
+        recognition.start();
+      }, false);
+
+      var STATES = {
+        "INITIAL": 'projectIntro',
+        "PROBLEM_NOTING": 'problem',
+        "BUDGET": 'budget',
+        "DEADLINE": 'deadline',
+        "OFF": 5
+      };
+      currentState = STATES["INITIAL"];
+      nextState = null;
+
+      function handleMessage(message) {
+        switch(currentState) {
+          case STATES["INITIAL"]:
+            if (message.includes("your problem")) {
+              currentState = STATES["PROBLEM_NOTING"];
+            }
+          break;
+          case STATES["PROBLEM_NOTING"]:
+            if (message.includes("your budget")) {
+              currentState = STATES["BUDGET"];
+            }
+          break;
+          case STATES["BUDGET"]:
+            if (message.includes("your deadline")) {
+              currentState = STATES["DEADLINE"];
+            }
+          break;
+          case STATES["DEADLINE"]:
+            if (message.includes("we have everything")) {
+              currentState = STATES["DEADLINE"];
+            }
+          break;
+          case STATES["OFF"]:
+            recognition.stop();
+          break;
+          default:
+        }
+
+        var currentStateElement = document.getElementById('currentState');
+        currentStateElement.innerHTML += '> ' + currentState + ' ';
+        var currentElement = document.getElementById(currentState);
+        currentElement.innerHTML += message;
+      }
+
+      recognition = new webkitSpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = "en-US";
+
+      recognition.onresult = function (e) {
+        var textarea = document.getElementById('speech');
+        for (var i = e.resultIndex; i < e.results.length; ++i) {
+          if (e.results[i].isFinal) {
+            console.log(e.results[i]);
+            handleMessage(e.results[i][0].transcript);
+            textarea.innerHTML += e.results[i][0].transcript;
+          }
+        }
+      }
+    </script>
+  </body>
+</html>
